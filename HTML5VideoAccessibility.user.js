@@ -6,11 +6,11 @@
 // @copyright   Copyright 2017 Yannick Youale
 // @license     BSD
 // @include     *
-// @version     0.5
+// @version     0.6
 // @grant       none
 // ==/UserScript==
 
-// at the 30 june 2k018
+// at the 13 november 2018
 // customizations are made for (in alphabetical order):
 // sokrostream.biz
 // vimeo.com
@@ -33,14 +33,17 @@ saystring("");
 	killWindowlessFlash(document);
 
 // we wait a little time
+sleep(1000);
+// we stop any speech
+stopSpeech();
 
 // is there any video on this page ?
 VideoFlag = isVideoOnTheCurrentPage();
 // if at least one video on this page
 if(VideoFlag == true){
-// we add the event of pressed keys
-window.addEventListener('keydown', document_onKeyDown, true);
-// we move the focus on the first video object
+// we identify the index of the longest video of this page
+// VideoIndex = getLongestVideo();
+// we move the focus to this video frame
 document.getElementsByTagName("video")[VideoIndex].focus();
 // we trigger the timer to check page title's change
 // every 2 seconds
@@ -74,6 +77,14 @@ document.getElementsByTagName("video")[VideoIndex].play();
 } // end if
 } // End If there is a video on the current page
 } // End Function
+
+function onAfterPageLoad(){
+// some second after the loading of the page
+// we will recheck if there is a video on this page.
+if(VideoFlag == false){
+onPageLoad();
+} // End If
+} // end function
 
 function isVideoOnTheCurrentPage(){
 // check if we are on a video page
@@ -167,7 +178,7 @@ return s;
 } // End Function
 
 function getVideoDuration(){
-// get, convert and return the total duration of the selected video
+// get, convert and return the total duration of the current selected video
 var elm = document.getElementsByTagName("video")[VideoIndex];
 var s = "";
 s = elm.duration;
@@ -177,6 +188,28 @@ var i = parseInt(s);
 return ConvertDuration(i, 2);
 } // end if the duration is a number
 return "";
+} // End Function
+
+function getLongestVideo(){
+// return the index of the longest video in the current page
+// usefull to usually select the not advertizing video of the page when many.
+var i;
+var nb = document.getElementsByTagName("video").length;
+var d = 0.0;
+var dMax = 0.0;
+var iMax = 0;
+// we browse the videos of the current pages
+for(i=0; i<nb; i++){
+d = document.getElementsByTagName("video")[i].duration;
+if(isFinite(s) == true){
+if(d > dMax){
+dMax = d;
+iMax = i;
+} // End If
+} // end if
+} // End For
+// we return the index of the longest video
+return iMax;
 } // End Function
 
 function checkPageTitleChange(){
@@ -206,6 +239,8 @@ s = getVideoDuration();
 if(s != ""){
 sText = sText + ", duration: " + s;
 } // end if
+// and also the video's position in the page
+sText = sText + " video "+(VideoIndex + 1)+"/"+document.getElementsByTagName("video").length;
 // reading by the vocal synthesis
 saystring(sText);
 } // end if the page title has change
@@ -223,7 +258,7 @@ var elm;
 var url;
 //
 url = window.location.href;
-// sur sokrostream
+// on sokrostream
 if(url.indexOf("/sokrostream.") > -1){
 // on cherche les liens a
 elm = document.getElementsByTagName("a");
@@ -237,7 +272,7 @@ return;
 } // End For
 } // End If si des iframe
 } // End If on sokrostream
-// sur youtube
+// on youtube
 if(window.location.href.indexOf("youtube.com") > -1){
 // on recherche un éventuel bouton "Ignorer l'annonce"
 // pour clicker dessus
@@ -256,10 +291,16 @@ elm[i].dispatchEvent(evt);
 return;
 } // End If texte trouvé
 } // End For
-} // end if sur youtube
-// on déplace le focus à l'objet video
+} // end if on youtube
+// if at least one video object have been detected on the current page
+if(VideoFlag == true){
+// we move the focus to the video's frame
 document.getElementsByTagName("video")[VideoIndex].focus();
 saystring("Déplacement à l'objet vidéo");
+} else { // no video object has been recognised on the current page
+// however we force a new search
+onPageLoad();
+} // end if
 } // End Function
 
 function videoTogglePlayPause(){
@@ -302,7 +343,7 @@ d = elm.currentTime;
 d = d - 10;
 if(d < 0){ d = 0; }
 elm.currentTime = d;
-saystring("Recul de 10 secondes");
+saystring("-10 secondes");
 } // End Function
 
 function videoMove10SecRight(){
@@ -324,7 +365,7 @@ dd = elm.duration;
 d = d + 10;
 if(d > dd){ d = dd; }
 elm.currentTime = d;
-saystring("Avance de 10 secondes")
+saystring("+10 secondes")
 } // End Function
 
 function videoMove60SecLeft(){
@@ -344,7 +385,7 @@ d = elm.currentTime;
 d = d - 60;
 if(d < 0){ d = 0; }
 elm.currentTime = d;
-saystring("Recul de 60 secondes");
+saystring("-60 secondes");
 } // End Function
 
 function videoMove60SecRight(){
@@ -366,7 +407,7 @@ dd = elm.duration;
 d = d + 60;
 if(d > dd){ d = dd; }
 elm.currentTime = d;
-saystring("Avance de 60 secondes");
+saystring("+60 secondes");
 } // End Function
 
 function videoMove5MinLeft(){
@@ -386,7 +427,7 @@ d = elm.currentTime;
 d = d - (60 * 5);
 if(d < 0){ d = 0; }
 elm.currentTime = d;
-saystring("Recul de 5 minutes");
+saystring("-5 minutes");
 } // End Function
 
 function videoMove5MinRight(){
@@ -408,7 +449,7 @@ dd = elm.duration;
 d = d + (60 * 5);
 if(d > dd){ d = dd; }
 elm.currentTime = d;
-saystring("Avance de 5 minutes");
+saystring("+5 minutes");
 } // End Function
 
 function videoOrigin(){
@@ -416,7 +457,7 @@ function videoOrigin(){
 var elm;
 elm = document.getElementsByTagName("video")[VideoIndex];
 elm.currentTime = 0;
-saystring("Vidéo au début");
+saystring("Begining of the video");
 } // End Function
 
 function videoEnd(){
@@ -425,7 +466,7 @@ var elm;
 elm = document.getElementsByTagName("video")[VideoIndex];
 d = elm.duration;
 elm.currentTime = parseInt(d);
-saystring("Vidéo à la fin");
+saystring("End of the video");
 } // End Function
 
 function videoReach(){
@@ -457,7 +498,7 @@ d = d + (parseInt(tbl[1]) * 60);
 d = d + parseInt(tbl[2]);
 // we apply
 elm.currentTime = d;
-saystring("déplacement à " + t);
+saystring("Move to " + t);
 } // End Function
 
 function videoVolumeUp(){
@@ -471,7 +512,7 @@ d = elm.volume;
 d = d + 0.05;
 if(d > 1){ d = 1; }
 elm.volume = d;
-s = "Volume " + Math.round(d * 100);
+s = "Volume " + Math.round(d * 100)+"%";
 saystring(s);
 } // End Function
 
@@ -486,7 +527,7 @@ d = elm.volume;
 d = d - 0.05;
 if(d < 0){ d = 0; }
 elm.volume = d;
-s = "Volume " + Math.round(d * 100);
+s = "Volume " + Math.round(d * 100)+"%";
 saystring(s);
 } // End Function
 
@@ -502,7 +543,7 @@ d = elm.playbackRate;
 if(d < 2){
 elm.playbackRate = d + 0.1;
 d = Math.round(d * 100);
-saystring("Vitesse " + d + "%");
+saystring("Speed " + d + "%");
 } // end if
 } // End Function
 
@@ -517,7 +558,7 @@ d = elm.playbackRate;
 if(d > 0){
 elm.playbackRate = d - 0.1;
 d = Math.round(d * 100);
-saystring("Vitesse " + d + "%");
+saystring("Speed " + d + "%");
 } // end if
 } // End Function
 
@@ -537,25 +578,30 @@ s = elm.duration;
 // if it is a number
 if(isFinite(s) == true){
 i = parseInt(s);
-s = " on " + ConvertDuration(i, 2);
+s = " / " + ConvertDuration(i, 2);
 d = parseInt(elm.currentTime);
 s = ConvertDuration(d, 2) + s;
 // convertion en pourcentage
 s = s + " " + Math.round(d * 100 / i) + "%";
 // if in pause
 if(elm.paused == true){
-s = s + "\r\n" + "paused" ;
+s = s + "\r\n, " + "State=paused" ;
 } else {
-s = s + "\r\n" + "playing";
+s = s + "\r\n, " + "State=playing";
 } // end if
-// si muet activé
-if(elm.muted == true){
-s = s + "\r\n" + " on muted" ;
-} // end if
-// la vitesse
+// the speed
 d = elm.playbackRate;
-s = s + "\r\n" + "speed=" + Math.round(d * 100) + "%";
-// reading by the vocal synthesis
+s = s + "\r\n, " + "Speed=" + Math.round(d * 100) + "%";
+// the volume level
+d = elm.volume;
+s = s + "\r\n, " + "Volume=" + Math.round(d * 100) + "%";
+// if muted activated
+if(elm.muted == true){
+s = s + "\r\n, " + " Muted=true" ;
+} // end if
+// the position of the video
+s = s + "\r\n, " + "Video "+(VideoIndex + 1)+"/"+document.getElementsByTagName("video").length;
+// we make read by the vocal synthesis
 saystring(s);
 } else {
 saystring("failure");;
@@ -594,23 +640,61 @@ return;
 function videoBeforeOnSamePage(){
 // select the previous video on the same page
 // changement d'index de vidéo
-var i;
-i = 1;
-i = document.getElementsByTagName("video").length;
+var s = "";
+var i = 1;
+var d;
+var elm = document.getElementsByTagName("video");
+var sText = "";
+// we select the video before on the same page
+i = elm.length;
 VideoIndex = VideoIndex - 1;
-if(VideoIndex <= 0){ VideoIndex = i - 1; }
-saystring("Video " + (VideoIndex + 1) + "/" + i);
+if(VideoIndex < 0){ VideoIndex = i - 1; }
+sText = "Video " + (VideoIndex + 1) + "/" + i;
+//  we also say the newly selected video's duration
+elm = elm[VideoIndex];
+s = elm.duration;
+// if it is a number
+if(isFinite(s) == true){
+i = parseInt(s);
+s = " / " + ConvertDuration(i, 2);
+d = parseInt(elm.currentTime);
+s = ConvertDuration(d, 2) + s;
+// convertion en pourcentage
+s = s + " " + Math.round(d * 100 / i) + "%";
+// we append to the global text
+sText = sText + ", " + s;
+} // end if
+saystring(sText);
 } // End Function
 
 function videoAfterOnSamePage(){
 // select the next video on the same page
-var i;
-// changement d'index de vidéo
+var s = "";
+var i = 1;
+var d;
+var elm = document.getElementsByTagName("video");
+var sText = "";
+// we select the video after on the same page
 i = 1;
-i = document.getElementsByTagName("video").length;
+i = elm.length;
 VideoIndex = VideoIndex + 1;
 if(VideoIndex >= i){ VideoIndex = 0; }
-saystring("Video " + (VideoIndex + 1) + "/" + i);
+sText = "Video " + (VideoIndex + 1) + "/" + i;
+//  we also say the newly selected video's duration
+elm = elm[VideoIndex];
+s = elm.duration;
+// if it is a number
+if(isFinite(s) == true){
+i = parseInt(s);
+s = " / " + ConvertDuration(i, 2);
+d = parseInt(elm.currentTime);
+s = ConvertDuration(d, 2) + s;
+// convertion en pourcentage
+s = s + " " + Math.round(d * 100 / i) + "%";
+// we append to the global text
+sText = sText + ", " + s;
+} // end if
+saystring(sText);
 } // End Function
 
 function videoURL(){
@@ -665,6 +749,9 @@ if(KeyCode == 27){
 escapeKey();
 return;
 } // end if
+
+// if at least one video has been detected on the current page
+if(VideoFlag == true){
 
 // pagedown
 if(KeyCode == 34){
@@ -796,6 +883,8 @@ return;
 
 } // end if isFocusNotInInputText
 
+} // end if at least one video has been detected
+
 } // end function
 
 // variables globales nécessaires à la fonction
@@ -836,6 +925,23 @@ elm.innerText = s + difference;
 // we record the message in memory
 message_yyd = s
 } // end function
+
+function stopSpeech(){
+// to stop the vocal synthesis
+// that will simply simulate the pressing of the ctrl key.
+var e = new Event("keydown");
+// e.key="f";    // just enter the char you want to send 
+// e.keyCode=e.key.charCodeAt(0);
+// e.which=e.keyCode;
+e.altKey=false;
+e.ctrlKey=true;
+e.shiftKey=false;
+e.metaKey=false;
+e.bubbles=false;
+document.dispatchEvent(e);
+document.dispatchEvent(e);
+document.dispatchEvent(e);
+} // End Function
 
 function reloadFlash(elm) {
 	// We need to remove the node from the document and add it again to reload Flash.
@@ -880,7 +986,7 @@ function killWindowlessFlash(target) {
 	}
 } // end function
 
-	function sleep(milliseconds){
+function sleep(milliseconds){
 // sleep in javascript
 var start = new Date().getTime();
 for (var i = 0; i < 1e7; i  ) {
@@ -890,9 +996,13 @@ break;
 } // end for
 } // end function
 
-// we create the event on page load
-// onPageLoad();
+// we add the event onKeyDown
+window.addEventListener('keydown', document_onKeyDown, true);
+
+// we add the event on page load
 window.addEventListener("load", onPageLoad);
+// we schedule the second verification after the loading of the page
+window.setTimeout(onAfterPageLoad, 3000)
 
 // some features for flash video
 var observer = new MutationObserver(function(mutations) {
