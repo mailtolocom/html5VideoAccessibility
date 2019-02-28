@@ -42,7 +42,7 @@ VideoFlag = isVideoOnTheCurrentPage();
 // if at least one video on this page
 if(VideoFlag == true){
 // we identify the index of the longest video of this page
-// VideoIndex = getLongestVideo();
+getLongestVideo();
 // we move the focus to this video frame
 document.getElementsByTagName("video")[VideoIndex].focus();
 // we trigger the timer to check page title's change
@@ -193,6 +193,8 @@ return "";
 function getLongestVideo(){
 // return the index of the longest video in the current page
 // usefull to usually select the not advertizing video of the page when many.
+// after a delay
+window.setTimeout(function (){
 var i;
 var nb = document.getElementsByTagName("video").length;
 var d = 0.0;
@@ -201,7 +203,7 @@ var iMax = 0;
 // we browse the videos of the current pages
 for(i=0; i<nb; i++){
 d = document.getElementsByTagName("video")[i].duration;
-if(isFinite(s) == true){
+if(isFinite(d) == true){
 if(d > dMax){
 dMax = d;
 iMax = i;
@@ -209,7 +211,9 @@ iMax = i;
 } // end if
 } // End For
 // we return the index of the longest video
-return iMax;
+// return iMax;
+VideoIndex = iMax;
+}, 7000);
 } // End Function
 
 function checkPageTitleChange(){
@@ -239,8 +243,8 @@ s = getVideoDuration();
 if(s != ""){
 sText = sText + ", duration: " + s;
 } // end if
-// and also the video's position in the page
-sText = sText + " video "+(VideoIndex + 1)+"/"+document.getElementsByTagName("video").length;
+// and also the number of video's in the current page
+sText = sText + ", "+document.getElementsByTagName("video").length+" video on this page";
 // reading by the vocal synthesis
 saystring(sText);
 } // end if the page title has change
@@ -274,15 +278,15 @@ return;
 } // End If on sokrostream
 // on youtube
 if(window.location.href.indexOf("youtube.com") > -1){
-// on recherche un éventuel bouton "Ignorer l'annonce"
-// pour clicker dessus
+// we search for a button the ignore the advertizing
+// in order to click on it
 elm = document.getElementsByTagName("button");
 s = "";
 for(i=0; i<elm.length; i++){
 s = elm[i].innerText;
-if(s.indexOf("Ignorer l'annonce") > -1){
-// on va simuler un click de la souris sur cet élément
-saystring("Ignorer l'annonce");
+if(s.indexOf("Ignore") > -1 || s.indexOf("Ignorer l'annonce") > -1){
+// we are going to simulate a mouse click on this element
+saystring("Ignore the announce");
 // elm[i].focus();
 var evt = document.createEvent("MouseEvents");
 evt.initMouseEvent("click", true, true, window,0, 0, 0, 0, 0, false, false, false, false, 0, null);
@@ -623,9 +627,11 @@ var url;
 if(window.location.href.indexOf("youtube.com") > -1){
 // on va clicker sur le lien nommé suivant
 // tagName=A, className=ytp-next-button ytp-button, title=Suivante
-elm = document.getElementsByTagName("a");
+elm = document.getElementsByTagName("A");
+var flag1 = false;
 for(i=0; i<elm.length; i++){
-if(elm[i].title == "Suivante"){
+if(elm[i].title == "Suivante" || elm[i].title == "Next" || elm[i].className == "ytp-next-button ytp-button"){
+flag1 = true;
 saystring("next video");
 // on effectue le click
 var evt = document.createEvent("MouseEvents");
@@ -634,6 +640,7 @@ elm[i].dispatchEvent(evt);
 return;
 } // End If end if est le bon lien
 } // End For
+alert(flag1);
 } // end if sur youtube
 } // End Function
 
@@ -718,13 +725,14 @@ var url;
 // saystring(KeyCode); // pour les tests de touche
 
 // for testings
-if(1 == 0){
+if(0 == 1){
 // if(KeyCode == 82){ // touche r
+if(KeyCode == 222){ // touche puissance 2
 elm = document.activeElement;
 s = "tagName=" + elm.tagName + ", innerText=" + elm.innerText + ", name=" + elm.name + ", id=" + elm.id + ", className=" + elm.className + ", title=" + elm.title;
 prompt("élement=", s);
 prompt("code=", elm.parentNode.innerHTML);
-// return;
+return;
 var searched = prompt("texte à rechercher:", "Suivant");
 s = prompt("type de balise", "button");
 elm = document.getElementsByTagName(s);
@@ -743,6 +751,7 @@ s = s + elm[i].innerHTML + "|\r\n";
 prompt(elm.length + " innerHTML", s);
 return;
 } // end if touche
+} // end if test
 
 // 27 = escape
 if(KeyCode == 27){
@@ -887,16 +896,18 @@ return;
 
 } // end function
 
-// variables globales nécessaires à la fonction
-// de lecture par la synthèse vocale
+// global variable needed by the saystring function
 var compteur_yyd = 0;
 var message_yyd = "";
+var timeout_yyd = 0;
 
 function saystring(s){
 // say a text by the rulling vocal synthesis
 // using aria accessibility tags
 var elm;
 var difference = "";
+// we stop an eventual cleaning timer
+window.clearTimeout(timeout_yyd);
 // we search for our customized text zone
 elm = document.getElementById("message_to_say_yyd");
 if(elm == null){ // not yet existing
@@ -924,6 +935,11 @@ elm.innerText = s + difference;
 } // end if elm not null
 // we record the message in memory
 message_yyd = s
+// we schedule the cleaning of the text in half a seconde
+const clearSaidMessage = () => {
+document.getElementById("message_to_say_yyd").innerText = "";
+};
+timeout_yyd = window.setTimeout(clearSaidMessage, 500);
 } // end function
 
 function stopSpeech(){
